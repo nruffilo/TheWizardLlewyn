@@ -6,11 +6,23 @@
         <script src="script.js"></script>
     </head>
     <body>
-        <div id="hero_div" class="person">DIV</div>
+        <div id="gameboard" style="display:none;">
+            <div id="hero_div" class="person">DIV</div>
+        </div>
+        <!--
         <div id="extra1" class="person">Extra1</div>
         <div id="extra2" class="person">Extra2</div>
         <div id="extra3" class="person">Extra3</div>
         <div id="extra4" class="person">Extra4</div>
+        -->
 
+        <div id="stage_select">
+            <h1>Select a Stage!</h1>
+            <button id="stage_1" onclick="setStage(1);">Stage 1</button>
+            <button id="stage_2" onclick="setStage(2);">Stage 2</button>
+            <button id="stage_3" onclick="setStage(3);">Stage 3</button>
+            <button id="stage_4" onclick="setStage(4);">Stage 4</button>
+            <button id="stage_5" onclick="setStage(5);">OMGWTFBBQ</button>
+        </div>
     </body>
 </html>

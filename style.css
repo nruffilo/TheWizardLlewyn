@@ -6,7 +6,7 @@ body {
 #hero_div {
     color: rgb(200, 30, 30);
     top: 120px;
-    left: 120px;
+    left: 20px;
     background-color: rgba(30,20,160, .3);
 }
 
@@ -40,7 +40,7 @@ body {
 }
 
 .person {
-    transition: all .5s;
+    /*transition: all .5s;*/
     border: 1px solid rgb(200,200,200);
     width: 42px;
     height: 64px;
@@ -97,4 +97,28 @@ body {
     width: 4px;
     border-radius: 4px;
     border: 1px solid rgba(200, 10,10, .9);
+}
+
+.black_hole {
+    display: block;
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    border-radius: 16px;
+    background-color: #000000;
+}
+
+#stage_select {
+    width: 300px;
+    height: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 100px;
+}
+
+.obstacle {
+    background-color: rgba(0,0,200,.7);
+    border: 1px solid #000000;
+    border-radius: 4px;
+    position: absolute;
 }
