@@ -30,7 +30,7 @@ $(document).ready(function() {
 
             el.css("top", event.pageY + "px");
             el.css("left", event.pageX + "px");
-            black_holes.push({el: el, top: event.pageY, left: event.pageX});
+            black_holes.push({el: el, top: event.pageY, left: event.pageX, mass:50, height: 12, width: 12});
         }
     });
 
@@ -52,8 +52,21 @@ function moveHero() {
         if (typeof(black_holes[i]) != "undefined") {
             var total_distance = Math.sqrt(Math.abs(hero_top-black_holes[i].top)^2+Math.abs(hero_left-black_holes[i].left)^2);
             var amplification_effect = (1/((total_distance+10)^2));
-            var yVelocity = (black_holes[i].top-hero_top) * amplification_effect;
-            var xVelocity = (black_holes[i].left-hero_left) * amplification_effect;
+            var yVelocity = (black_holes[i].mass) * amplification_effect;
+            var xVelocity = (black_holes[i].mass) * amplification_effect;
+            if (black_holes[i].top + (black_holes[i].height/2) > hero_top + (hero_height/2)) {
+                yVelocity = Math.abs(yVelocity);
+            } else {
+                yVelocity = -Math.abs(yVelocity);
+            }
+
+            if (black_holes[i].left + (black_holes[i].width/2) > hero_left + (hero_width/2)) {
+                xVelocity = Math.abs(xVelocity);
+            } else {
+                xVelocity = -Math.abs(xVelocity);
+            }
+
+
             //TODO: Update velocity to approproiately deal with sign (+/-) but be based off a black hole "weight"
 
             //var yVelocity = black_hole_weight * amplification_effect;
@@ -68,56 +81,13 @@ function moveHero() {
 
     for (item in world.obstacles) {
         var checkItem = world.obstacles[item];
-        if (checkItem.top <= hero_top + hero_height + hero_velocity_y
-            && checkItem.top + hero_height + hero_velocity_y >= hero_top
-            && checkItem.left + hero_width >= hero_left + hero_velocity_x
-            && checkItem.left <= hero_left + hero_width + hero_velocity_x
-        ) {
-            //is the collision from moving left
-            if (
-                (hero_left + hero_width < checkItem.left)
-                && (hero_left + hero_width + hero_velocity_x >= checkItem.left)) {
-                hero_velocity_x = 0;
-                hero_left = checkItem.left - hero_width;
-            } else if (
-                (hero_left > checkItem.left + checkItem.width)
-                && (hero_left + hero_velocity_x <= checkItem.left+ checkItem.width)) {
-                hero_velocity_x = 0;
-                hero_left = checkItem.left + checkItem.width;
-            } else if (
-                (hero_top + hero_height < checkItem.top)
-                && (hero_top + hero_height + hero_velocity_y >= checkItem.top)
-            ) {
+        if (collissionDetect(hero_top+hero_velocity_y, hero_left+hero_velocity_x, hero_height, hero_width, checkItem.top, checkItem.left, checkItem.height, checkItem.width)) {
+            if (collissionDetect(hero_top+hero_velocity_y, hero_left, hero_height, hero_width, checkItem.top, checkItem.left, checkItem.height, checkItem.width)) {
                 hero_velocity_y = 0;
-                hero_top = checkItem.top-hero_height;
-            } else if (
-                (hero_top > checkItem.top + checkItem.height)
-                && (hero_top + hero_velocity_y <= checkItem.top + checkItem.heigth)
-            ) {
-                hero_velocity_y = 0;
-                hero_top = checkItem.top+ checkItem.height;
-            } else {
-                //see if newly hitting left
-                if ((hero_velocity_x > 0) && (hero_left+hero_width < checkItem.left)) {
-                    hero_velocity_x = 0;
-                    hero_left = checkItem.left - hero_width;
-                }
-                if ((hero_velocity_x < 0) && (hero_left > checkItem.left + checkItem.width)) {
-                    hero_velocity_x = 0;
-                    hero_left = checkItem.left + checkItem.width;
-                }
-                if ((hero_velocity_y >0) && (hero_top + hero_height < checkItem.top)) {
-                    hero_velocity_y = 0;
-                    hero_top = checkItem.top - hero_height;
-                }
-                if ((hero_velocity_y <0) && (hero_top > checkItem.top+checkItem.height)) {
-                    hero_velocity_y = 0;
-                    hero_top = checkItem.top + checkItem.height;
-                }
-
-                console.log("Collission detected, but by golly we didn't know what to do with it...");
             }
-            //is the collision from moving DOWN
+            if (collissionDetect(hero_top, hero_left+hero_velocity_x, hero_height, hero_width, checkItem.top, checkItem.left, checkItem.height, checkItem.width)) {
+                hero_velocity_x = 0;
+            }
         }
     }
 
@@ -131,11 +101,8 @@ function moveHero() {
     //check if the hero has collided with any of the collectables
     for (item in world.collectables) {
         var checkItem = world.collectables[item];
-        if (checkItem.top <= hero_top + hero_height
-            && checkItem.top + hero_height >= hero_top
-            && checkItem.left + hero_width >= hero_left
-            && checkItem.left <= hero_left + hero_width
-        )
+
+        if (collissionDetect(checkItem.top, checkItem.left, checkItem.height, checkItem.width, hero_top, hero_left, hero_height, hero_width))
         {
             world.collectables[item].el.remove();
             world.collectables.splice(item,1);
@@ -167,8 +134,8 @@ function setStage(stage_num) {
         case 1:
             $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 100px; left: 200px;'></div>");
             $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 200px; left: 420px;'></div>");
-            world.collectables.push({el: $("#collectable0"), top: 100, left: 200});
-            world.collectables.push({el: $("#collectable1"), top: 200, left: 420});
+            world.collectables.push({el: $("#collectable0"), top: 100, left: 200, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable1"), top: 200, left: 420, height: 6, width: 6});
             hero_top = 120;
             hero_left = 20;
             max_black_holes = 1;
@@ -177,22 +144,49 @@ function setStage(stage_num) {
             $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 200px; left: 100px;'></div>");
             $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 100px; left: 260px;'></div>");
             $("#gameboard").append("<div id='collectable2' class='collectable' style='top: 220px; left: 380px;'></div>");
-            world.collectables.push({el: $("#collectable0"), top: 200, left: 100});
-            world.collectables.push({el: $("#collectable1"), top: 100, left: 260});
-            world.collectables.push({el: $("#collectable2"), top: 220, left: 380});
+            world.collectables.push({el: $("#collectable0"), top: 200, left: 100, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable1"), top: 100, left: 260, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable2"), top: 220, left: 380, height: 6, width: 6});
             hero_top = 120;
             hero_left = 20;
             max_black_holes = 2;
+            break;
+        case 3:
+            $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 200px; left: 100px;'></div>");
+            $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 100px; left: 260px;'></div>");
+            $("#gameboard").append("<div id='collectable2' class='collectable' style='top: 220px; left: 380px;'></div>");
+            world.collectables.push({el: $("#collectable0"), top: 200, left: 100, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable1"), top: 100, left: 260, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable2"), top: 220, left: 380, height: 6, width: 6});
+            hero_top = 120;
+            hero_left = 20;
+            max_black_holes = 1;
+            break;
+        case 4:
+            $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 100px; left: 100px;'></div>");
+            $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 200px; left: 200px;'></div>");
+            $("#gameboard").append("<div id='collectable2' class='collectable' style='top: 300px; left: 100px;'></div>");
+            $("#gameboard").append("<div id='collectable3' class='collectable' style='top: 400px; left: 300px;'></div>");
+            $("#gameboard").append("<div id='collectable4' class='collectable' style='top: 500px; left: 200px;'></div>");
+            world.collectables.push({el: $("#collectable0"), top: 100, left: 100, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable1"), top: 200, left: 200, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable2"), top: 300, left: 100, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable3"), top: 400, left: 300, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable4"), top: 500, left: 200, height: 6, width: 6});
+            console.log("loading stage 4");
+            hero_top = 120;
+            hero_left = 20;
+            max_black_holes = 5;
             break;
         case 5: //omgwtfbbq
             $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 100px; left: 120px;'></div>");
             $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 200px; left: 120px;'></div>");
             $("#gameboard").append("<div id='collectable2' class='collectable' style='top: 140px; left: 380px;'></div>");
             $("#gameboard").append("<div id='collectable3' class='collectable' style='top: 240px; left: 380px;'></div>");
-            world.collectables.push({el: $("#collectable0"), top: 100, left: 120});
-            world.collectables.push({el: $("#collectable1"), top: 200, left: 120});
-            world.collectables.push({el: $("#collectable2"), top: 140, left: 380});
-            world.collectables.push({el: $("#collectable3"), top: 240, left: 380});
+            world.collectables.push({el: $("#collectable0"), top: 100, left: 120, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable1"), top: 200, left: 120, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable2"), top: 140, left: 380, height: 6, width: 6});
+            world.collectables.push({el: $("#collectable3"), top: 240, left: 380, height: 6, width: 6});
 
             $("#gameboard").append("<div id='obstacle0' class='obstacle' style='top:60px;left:260px;width:16px; height: 100px;'></div>");
             $("#gameboard").append("<div id='obstacle1' class='obstacle' style='top:300px;left:260px;width:16px; height: 100px;'></div>");
@@ -211,6 +205,19 @@ function setStage(stage_num) {
     $("#hero_div").css("left",hero_left+"px");
     setTimeout(function() { game_active = true; }, 100);
     moveHero();
+}
+
+
+function collissionDetect(obj1top, obj1left, obj1height, obj1width, obj2top, obj2left, obj2height, obj2width) {
+    if (obj1top <= obj2top + obj2height
+        && obj1top + obj1height >= obj2top
+        && obj1left <= obj2left + obj2width
+        && obj1left + obj1width >= obj2left
+    ) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function checkCollision(person, num) {

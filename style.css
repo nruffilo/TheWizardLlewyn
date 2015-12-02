@@ -102,10 +102,11 @@ body {
 .black_hole {
     display: block;
     position: absolute;
-    height: 16px;
-    width: 16px;
+    height: 4px;
+    width: 4px;
     border-radius: 16px;
     background-color: #000000;
+    box-shadow:0 0 2px 8px rgba(0,0,0,1);
 }
 
 #stage_select {
