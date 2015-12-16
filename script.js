@@ -12,7 +12,7 @@ var hero_height = 64;
 var hero_width = 42;
 var black_holes_used = 0;
 var game_active = false;
-var sensitivity = 100; //higher numbers, slower game
+var sensitivity = 10; //higher numbers, slower game
 var black_hole_weight = 10;
 $(document).ready(function() {
 
@@ -30,13 +30,14 @@ $(document).ready(function() {
 
             el.css("top", event.pageY + "px");
             el.css("left", event.pageX + "px");
-            black_holes.push({el: el, top: event.pageY, left: event.pageX, mass:50, height: 12, width: 12});
+            black_holes.push({el: el, top: event.pageY, left: event.pageX, mass:1, height: 12, width: 12});
         }
     });
 
     world.people = [];
     world.collectables = [];
     world.obstacles = [];
+    world.asteroids = [];
 
     //setStage(1);
 
@@ -50,10 +51,18 @@ function moveHero() {
     //need to be additive for multiple black holes
     for (i in black_holes) {
         if (typeof(black_holes[i]) != "undefined") {
-            var total_distance = Math.sqrt(Math.abs(hero_top-black_holes[i].top)^2+Math.abs(hero_left-black_holes[i].left)^2);
-            var amplification_effect = (1/((total_distance+10)^2));
-            var yVelocity = (black_holes[i].mass) * amplification_effect;
-            var xVelocity = (black_holes[i].mass) * amplification_effect;
+            var hero_mid_x = (hero_left + (hero_width/2));
+            var hero_mid_y = (hero_top + (hero_height/2));
+
+            var total_distance = Math.sqrt(Math.abs(hero_mid_y-black_holes[i].top)^2+Math.abs(hero_mid_x-black_holes[i].left)^2);
+            var amplification_effect = (1/(((total_distance+1)^2) +.003));
+
+            var x_distance = black_holes[i].left-hero_mid_x;
+            var y_distance = black_holes[i].top-hero_mid_y;
+
+            var yVelocity = (black_holes[i].mass) * amplification_effect * (y_distance/total_distance);
+            var xVelocity = (black_holes[i].mass) * amplification_effect * (x_distance/total_distance);
+            /*
             if (black_holes[i].top + (black_holes[i].height/2) > hero_top + (hero_height/2)) {
                 yVelocity = Math.abs(yVelocity);
             } else {
@@ -65,19 +74,49 @@ function moveHero() {
             } else {
                 xVelocity = -Math.abs(xVelocity);
             }
-
+            */
 
             //TODO: Update velocity to approproiately deal with sign (+/-) but be based off a black hole "weight"
 
             //var yVelocity = black_hole_weight * amplification_effect;
             //var xVelocity = black_hole_weight * amplification_effect;
-            moveX += (xVelocity == NaN) ? 0 : xVelocity;
-            moveY += (xVelocity == NaN) ? 0 : yVelocity;
+            console.log("xVelocity: " + xVelocity);
+            console.log("yVelocity: " + yVelocity);
+            if (xVelocity == NaN) {
+                xVelocity = 0;
+            }
+            if (yVelocity == NaN) {
+                yVelocity = 0;
+            }
+
+            //check for a max - as to not have things go completely crazy
+            if (yVelocity>2 || Number.POSITIVE_INFINITY == yVelocity) {
+                yVelocity = 2;
+            }
+
+            if (yVelocity <-2 || Number.NEGATIVE_INFINITY == yVelocity) {
+                yVelocity = -2;
+            }
+
+            if (xVelocity>2 || Number.POSITIVE_INFINITY == xVelocity) {
+                xVelocity = 2;
+            }
+
+            if (xVelocity <-2 || Number.NEGATIVE_INFINITY == xVelocity) {
+                xVelocity = -2;
+            }
+
+            moveX = xVelocity;
+            moveY = yVelocity;
+
         }
     }
 
     hero_velocity_x += (moveX/sensitivity);
     hero_velocity_y += (moveY/sensitivity);
+    console.log("Hero Velocity X " + hero_velocity_x);
+    console.log("Hero Velocity Y " + hero_velocity_y);
+
 
     for (item in world.obstacles) {
         var checkItem = world.obstacles[item];
@@ -109,6 +148,24 @@ function moveHero() {
         }
     }
 
+    for (item in world.asteroids) {
+        var checkItem = world.asteroids[item];
+
+        if (collissionDetect(checkItem.top, checkItem.left, checkItem.height, checkItem.width, hero_top, hero_left, hero_height, hero_width)) {
+            world.collectables[item].el.remove();
+            //Explode!
+            alert("You've exploded");
+            game_active = false;
+            $("#gameboard").hide();
+            $("#stage_select").show();
+            $(".black_hole").remove();
+            black_holes = [];
+            hero_velocity_x = 0;
+            hero_velocity_y = 0;
+            return false;
+        }
+    }
+
     if (world.collectables.length == 0) {
         alert("YOU WON, it took you " + black_holes_used + " black holes.");
         game_active = false;
@@ -132,21 +189,17 @@ function setStage(stage_num) {
     black_holes_used = 0;
     switch (stage_num) {
         case 1:
-            $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 100px; left: 200px;'></div>");
-            $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 200px; left: 420px;'></div>");
-            world.collectables.push({el: $("#collectable0"), top: 100, left: 200, height: 6, width: 6});
-            world.collectables.push({el: $("#collectable1"), top: 200, left: 420, height: 6, width: 6});
+            createCollectable("collectable0",100,200,6,6);
+            createCollectable("collectable1",200,420,6,6);
             hero_top = 120;
             hero_left = 20;
             max_black_holes = 1;
             break;
         case 2:
-            $("#gameboard").append("<div id='collectable0' class='collectable' style='top: 200px; left: 100px;'></div>");
-            $("#gameboard").append("<div id='collectable1' class='collectable' style='top: 100px; left: 260px;'></div>");
-            $("#gameboard").append("<div id='collectable2' class='collectable' style='top: 220px; left: 380px;'></div>");
-            world.collectables.push({el: $("#collectable0"), top: 200, left: 100, height: 6, width: 6});
-            world.collectables.push({el: $("#collectable1"), top: 100, left: 260, height: 6, width: 6});
-            world.collectables.push({el: $("#collectable2"), top: 220, left: 380, height: 6, width: 6});
+            createCollectable("collectable0",200,100, 6,6);
+            createCollectable("collectable1",100,260, 6,6);
+            createCollectable("collectable2",220,380, 6,6);
+            createAsteroid("asteroid1",250,250,12,12);
             hero_top = 120;
             hero_left = 20;
             max_black_holes = 2;
@@ -233,4 +286,41 @@ function checkCollision(person, num) {
         }
     }
     return false;
+}
+
+function createCollectable(collectable_id, top, left, col_height, col_width) {
+    $("#gameboard").append("<div id='"+collectable_id+"' class='collectable' style='top: "+top+"px; left: "+left+"px;'></div>");
+    world.collectables.push({el: $("#"+collectable_id), top: top, left: left, height: col_height, width: col_width});
+}
+
+
+function createAsteroid(asteroid_id, top, left, col_height, col_width) {
+    $("#gameboard").append("<div id='"+asteroid_id+"' class='asteroid' style='top: "+top+"px; left: "+left+"px;height: "+col_height+"px;width:"+col_width+"px;'></div>");
+    $("#"+asteroid_id).data("frame_x",0).data("frame_y",0);
+    world.asteroids.push({el: $("#"+asteroid_id), top: top, left: left, height: col_height, width: col_width});
+    setTimeout(function() { animateAsteroid($("#"+asteroid_id)) }, 500);
+}
+
+function animateAsteroid(el) {
+    if (game_active) {
+        var x = el.data("frame_x");
+        var y = el.data("frame_y");
+        x++;
+        if (x > 4) {
+            x = 0;
+            y++;
+        }
+
+        if (x == 4 && y == 3) {
+            y = 0;
+            x = 0;
+        }
+
+        el.data("frame_x", x);
+        el.data("frame_y", y);
+        el.css("background-position",(x*12)+"px "+(y*12)+"px");
+        setTimeout(function() {animateAsteroid(el);}, 100);
+    } else {
+        return false;
+    }
 }

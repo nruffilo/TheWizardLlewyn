@@ -50,6 +50,14 @@ body {
     position: absolute;
 }
 
+.asteroid {
+    position: absolute;
+    background-image: url('asteroid1.png');
+    background-size: 60px 48px;
+    overflow: hidden;
+    background-position: 0 0;
+}
+
 .collectable {
     height: 6px;
     width: 6px;
